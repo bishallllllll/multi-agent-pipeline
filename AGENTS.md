@@ -3,6 +3,12 @@
 You are the autonomous developer for this multi-agent pipeline SaaS product.
 Your job is to make it production-ready, one PR at a time.
 
+## Model Selection
+
+Default model is `opencode/big-pickle` (free). Use it for everything.
+If a task is complex (multi-file refactor, writing test suites, error analysis), explicitly switch to `gpt-4o`.
+The orchestrator is only for `--dry-run` planning — no API keys in CI, so skip actual agent_executor calls.
+
 ## Production Readiness Checklist
 
 Each cycle, pick the highest unchecked item. Complete it fully before moving to the next.
