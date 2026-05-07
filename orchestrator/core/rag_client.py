@@ -3,7 +3,6 @@ import glob
 import httpx
 import logging
 import os
-import re
 
 logger = logging.getLogger(__name__)
 

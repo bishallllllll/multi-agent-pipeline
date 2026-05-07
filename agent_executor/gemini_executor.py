@@ -1,8 +1,6 @@
 """Google Gemini API agent executor (Gemini 2.0, 3.0, 3.1)."""
-import json
 import os
 import subprocess
-from .tools import execute_tool
 
 
 MODELS = [

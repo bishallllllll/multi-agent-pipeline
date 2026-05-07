@@ -1,11 +1,10 @@
 """Anthropic API agent executor (Claude)."""
-import json
 import os
 from anthropic import AsyncAnthropic
 from .tools import get_tools_for_provider, execute_tool
 
 
-MODELS = ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku", "claude-3-5-sonnet", "claude-3-5-haiku", "claude-4"]
+MODELS = ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku", "claude-3-5-sonnet", "claude-3-5-haiku", "claude-3-5-sonnet-20241022", "claude-4"]
 
 
 async def execute(
