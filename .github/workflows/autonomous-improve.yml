@@ -81,6 +81,6 @@ jobs:
           git commit -m "feat(production): autonomous improvements"
 
           # Use PAT for push so CI triggers (GITHUB_TOKEN doesn't trigger workflows)
-          git remote set-url origin "https://x-access-token:${PAT_TOKEN}@github.com/${REPO}"
+          git remote set-url origin "https://git:${PAT_TOKEN}@github.com/${REPO}"
           git push origin main
           echo "Changes pushed to main"
