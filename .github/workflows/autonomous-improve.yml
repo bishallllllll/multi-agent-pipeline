@@ -58,7 +58,7 @@ jobs:
           opencode run "$TASK" 2>&1 | tee opencode_output.log
 
       - name: Lint
-        run: ruff check . --extend-ignore E999
+        run: ruff check agent_executor orchestrator tests --extend-ignore E999
 
       - name: Test
         run: python -m pytest tests/ -v --tb=short

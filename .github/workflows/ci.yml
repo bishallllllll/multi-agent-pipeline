@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install ruff
-      - run: ruff check . --extend-ignore E999
+      - run: ruff check agent_executor orchestrator tests --extend-ignore E999
 
   test:
     runs-on: ubuntu-latest

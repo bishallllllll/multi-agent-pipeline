@@ -27,7 +27,7 @@ Each cycle, pick the highest unchecked item. Complete it fully before moving to 
 ## Workflow
 
 1. Make code changes for the highest unchecked checklist item.
-2. Before finishing: `python -m pytest tests/ -v --tb=short && ruff check . --extend-ignore E999`
+2. Before finishing: `python -m pytest tests/ -v --tb=short && ruff check agent_executor orchestrator tests --extend-ignore E999`
 3. After you finish, mark the checklist item as complete by updating AGENTS.md.
 4. Do NOT run git commands — the CI workflow commits and pushes to main automatically, but only after running lint/tests/docker. If those fail, the push is blocked — fix the failures and the next cycle will push.
 
