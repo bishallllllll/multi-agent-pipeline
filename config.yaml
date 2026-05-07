@@ -1,0 +1,28 @@
+# Multi-Agent Pipeline Configuration
+agents_dir: ./agents
+rag_api_url: http://localhost:8000
+default_max_steps: 10
+default_mode: autonomous
+default_execution: sequential
+models:
+  high_complexity: gpt-4o
+  standard: gpt-4o-mini
+  fast: gpt-4o-mini
+model_categories:
+  high_complexity:
+    - architect
+    - researcher
+    - analyst
+    - strategist
+    - coordinator
+    - director
+    - synthesizer
+  fast:
+    - writer
+    - documenter
+    - formatter
+artifact_dir: ./artifacts
+task_graph_file: .task_graph.json
+agent_timeout: 300
+rag_timeout: 10
+retry_count: 2

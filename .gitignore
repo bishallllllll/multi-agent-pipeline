@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+artifacts/
+.task_graph.json
+experiments.json
+*.egg-info/
+dist/
+.venv/
+venv/
