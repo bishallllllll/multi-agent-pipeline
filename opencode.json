@@ -5,7 +5,7 @@
     "openai": {
       "baseURL": "https://models.inference.ai.azure.com",
       "models": {
-        "default": ["gpt-4o", "gpt-4o-mini"]
+        "default": "gpt-4o"
       },
       "options": {
         "apiKey": "{env:GITHUB_TOKEN}"
