@@ -29,13 +29,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install opencode
-        run: npm install -g @anthropic-ai/opencode
+        run: curl -fsSL https://opencode.ai/install | sh
+        shell: bash
+
+      - name: Add opencode to PATH
+        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -55,12 +54,10 @@ jobs:
           if [ -n "${{ github.event.inputs.task }}" ]; then
             TASK="${{ github.event.inputs.task }}"
           else
-            TASK="production-improve"
+            TASK="Run one cycle of autonomous production improvement. Read AGENTS.md for the checklist and rules."
           fi
 
-          opencode run --agent task-coordinator "$TASK" \
-            --model opencode/big-pickle \
-            --format json 2>&1 | tee opencode_output.log
+          opencode run "$TASK" 2>&1 | tee opencode_output.log
 
       - name: Check for new PR
         id: check_pr
