@@ -68,6 +68,9 @@ jobs:
 
       - name: Commit and push changes
         if: success()
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           if ! git status --porcelain | grep -q .; then
             echo "No changes to commit"
@@ -76,5 +79,8 @@ jobs:
 
           git add -A
           git commit -m "feat(production): autonomous improvements"
+
+          # Use PAT for push so CI triggers (GITHUB_TOKEN doesn't trigger workflows)
+          git remote set-url origin "https://x-access-token:${PAT_TOKEN}@github.com/${REPO}"
           git push origin main
           echo "Changes pushed to main"
