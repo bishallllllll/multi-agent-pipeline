@@ -57,9 +57,17 @@ jobs:
 
           opencode run "$TASK" 2>&1 | tee opencode_output.log
 
+      - name: Lint
+        run: ruff check . --extend-ignore E999
+
+      - name: Test
+        run: python -m pytest tests/ -v --tb=short
+
+      - name: Build Docker
+        run: docker build -t multi-agent-pipeline . --no-cache
+
       - name: Commit and push changes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: success()
         run: |
           if ! git status --porcelain | grep -q .; then
             echo "No changes to commit"
