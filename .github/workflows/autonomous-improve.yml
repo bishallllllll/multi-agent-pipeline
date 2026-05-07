@@ -30,8 +30,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | sh
-        shell: bash
+        run: |
+          curl -fsSL https://opencode.ai/install > /tmp/install_opencode.sh
+          bash /tmp/install_opencode.sh
 
       - name: Add opencode to PATH
         run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
