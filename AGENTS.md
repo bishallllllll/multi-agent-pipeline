@@ -30,8 +30,8 @@ Each cycle, pick the highest unchecked item. Complete it fully before moving to 
 2. Implement changes. Keep each PR focused on ONE checklist item.
 3. Before committing: `python -m pytest tests/ -v --tb=short && ruff check .`
 4. `git add -A && git commit -m "feat(production): {item description}"`
-5. `gh pr create --title "feat(production): {item}" --body "Closes checklist item {N}\n\n{summary of changes}" --label production`
-6. Wait for CI to pass. The workflow auto-merges.
+5. `git push origin production/{item-name}` — push the branch
+6. The GitHub workflow detects the new branch, creates a PR, and auto-merges when CI passes.
 
 ## Orchestrator Usage
 

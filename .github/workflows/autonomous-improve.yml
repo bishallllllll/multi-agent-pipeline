@@ -9,15 +9,16 @@ on:
         description: 'Specific improvement task (leave empty for auto-detect)'
         required: false
         type: string
-  issue_comment:
-    types: [created]
+  push:
+    branches:
+      - production/*
 
 jobs:
   improve:
     if: |
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/opencode improve'))
+      github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,7 +53,14 @@ jobs:
           git config --global user.name "opencode-automation"
           git config --global user.email "opencode@github.com"
 
+      - name: Record branches before
+        id: before
+        run: |
+          git fetch origin
+          echo "branches=$(git branch -r | sort)" >> $GITHUB_OUTPUT
+
       - name: Run opencode autonomous improvement
+        if: github.event_name != 'push'
         id: opencode
         env:
           OPENCODE_EXPERIMENTAL: true
@@ -65,23 +73,44 @@ jobs:
 
           opencode run "$TASK" 2>&1 | tee opencode_output.log
 
-      - name: Check for new PR from opencode
-        id: check_pr
+      - name: Find new branches and create PRs
+        id: create_pr
         run: |
-          PR_COUNT=$(gh pr list --author "opencode-automation" --state open --json number --jq 'length')
+          git fetch origin
+          NEW_BRANCHES=""
+          for branch in $(git branch -r | grep -v "origin/main" | grep -v "origin/HEAD" | sed 's/origin\///' | sort -u); do
+            PR_EXISTS=$(gh pr list --head "$branch" --state open --json number --jq 'length')
+            if [ "$PR_EXISTS" -eq 0 ]; then
+              COMMITS=$(git log origin/main..origin/$branch --oneline 2>/dev/null | wc -l)
+              if [ "$COMMITS" -gt 0 ]; then
+                NEW_BRANCHES="$branch"
+              fi
+            fi
+          done
+
+          for branch in $NEW_BRANCHES; do
+            COMMIT_MSG=$(git log origin/main..origin/$branch --format="%s" --reverse | head -1)
+            BODY=$(git log origin/main..origin/$branch --format="%s%n%b" --reverse)
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "$COMMIT_MSG" \
+              --body "Autonomous PR generated from branch \`$branch\`\n\n$BODY" \
+              --label production
+            echo "Created PR for $branch"
+          done
+
+          PR_COUNT=$(gh pr list --author "opencode-automation" --label production --state open --json number --jq 'length')
           echo "count=$PR_COUNT" >> $GITHUB_OUTPUT
-          if [ "$PR_COUNT" -gt 0 ]; then
-            PR_NUMBER=$(gh pr list --author "opencode-automation" --state open --json number --jq '.[0].number')
-            echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Label and auto-merge PR
-        if: steps.check_pr.outputs.count != '0'
+      - name: Auto-merge production PRs
+        if: steps.create_pr.outputs.count != '0'
         run: |
-          PR_NUMBER="${{ steps.check_pr.outputs.number }}"
-          gh pr label "$PR_NUMBER" --add production
-          gh pr merge "$PR_NUMBER" --squash --auto
+          for number in $(gh pr list --author "opencode-automation" --label production --state open --json number --jq '.[].number'); do
+            gh pr merge "$number" --squash --auto
+            echo "Auto-merge queued for PR #$number"
+          done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
