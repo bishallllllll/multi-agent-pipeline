@@ -4,9 +4,7 @@
   "provider": {
     "openai": {
       "baseURL": "https://models.inference.ai.azure.com",
-      "models": {
-        "default": "gpt-4o"
-      },
+      "models": {},
       "options": {
         "apiKey": "{env:GITHUB_TOKEN}"
       }
