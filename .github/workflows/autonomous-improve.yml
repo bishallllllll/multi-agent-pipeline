@@ -9,21 +9,12 @@ on:
         description: 'Specific improvement task (leave empty for auto-detect)'
         required: false
         type: string
-  push:
-    branches:
-      - production/*
 
 jobs:
   improve:
-    if: |
-      github.event_name == 'schedule' ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
-      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +45,6 @@ jobs:
           git config --global user.email "opencode@github.com"
 
       - name: Run opencode autonomous improvement
-        if: github.event_name != 'push'
         id: opencode
         env:
           OPENCODE_EXPERIMENTAL: true
@@ -67,106 +57,16 @@ jobs:
 
           opencode run "$TASK" 2>&1 | tee opencode_output.log
 
-      - name: Create PRs from existing production branches
-        id: existing_branches
-        if: github.event_name == 'push'
+      - name: Commit and push changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          git fetch origin
-          COUNT=0
-          for branch in $(git branch -r | grep "origin/production/" | sed 's/origin\///' | sort -u); do
-            PR_EXISTS=$(curl -s -H "Authorization: token $GH_TOKEN" \
-              "https://api.github.com/repos/$REPO/pulls?head=$REPO:$branch&state=open" \
-              | jq 'length')
-            if [ "$PR_EXISTS" -eq 0 ]; then
-              COMMITS=$(git log origin/main..origin/$branch --oneline 2>/dev/null | wc -l)
-              if [ "$COMMITS" -gt 0 ]; then
-                COMMIT_MSG=$(git log origin/main..origin/$branch --format="%s" --reverse | head -1)
-                BODY="Autonomous PR from \`$branch\`"
-                PR_JSON=$(curl -s -X POST \
-                  -H "Authorization: token $GH_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  "https://api.github.com/repos/$REPO/pulls" \
-                  -d "$(jq -n --arg title "$COMMIT_MSG" --arg head "$branch" --arg base "main" --arg body "$BODY" '{title: $title, head: $head, base: $base, body: $body}')")
-                PR_NUM=$(echo "$PR_JSON" | jq -r '.number // empty')
-                if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "null" ]; then
-                  curl -s -X POST \
-                    -H "Authorization: token $GH_TOKEN" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    "https://api.github.com/repos/$REPO/issues/$PR_NUM/labels" \
-                    -d '{"labels":["production"]}'
-                  COUNT=$((COUNT + 1))
-                  echo "Created PR #$PR_NUM for $branch"
-                fi
-              fi
-            fi
-          done
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-
-      - name: Commit and push opencode changes
-        id: commit_changes
-        if: github.event_name != 'push'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
         run: |
           if ! git status --porcelain | grep -q .; then
             echo "No changes to commit"
-            echo "count=0" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          ITEM="auto"
-          if [ -f opencode_output.log ]; then
-            ITEM_NUM=$(grep -oP '\*\*#\d+\*\*' opencode_output.log | head -1 | grep -oP '\d+' || echo "")
-            if [ -n "$ITEM_NUM" ]; then
-              ITEM="item-$ITEM_NUM"
-            fi
-          fi
-
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          BRANCH="production/$ITEM-$TIMESTAMP"
-
-          git checkout -b "$BRANCH"
           git add -A
-          git commit -m "feat(production): autonomous improvements ($ITEM)"
-          git push origin "$BRANCH"
-
-          PR_JSON=$(curl -s -X POST \
-            -H "Authorization: token $GH_TOKEN" \
-            -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/$REPO/pulls" \
-            -d "$(jq -n --arg title "feat(production): autonomous improvements ($ITEM)" --arg head "$BRANCH" --arg base "main" --arg body "Autonomous PR from \`$BRANCH\`" '{title: $title, head: $head, base: $base, body: $body}')")
-          PR_NUM=$(echo "$PR_JSON" | jq -r '.number // empty')
-          if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "null" ]; then
-            curl -s -X POST \
-              -H "Authorization: token $GH_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/$REPO/issues/$PR_NUM/labels" \
-              -d '{"labels":["production"]}'
-            echo "Created PR #$PR_NUM for $BRANCH"
-            echo "pr_number=$PR_NUM" >> $GITHUB_OUTPUT
-          else
-            echo "PR creation failed: $(echo "$PR_JSON" | jq -r '.message // .')"
-          fi
-
-          echo "count=1" >> $GITHUB_OUTPUT
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-
-      - name: Auto-merge production PRs
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          for number in $(curl -s -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/$REPO/issues?labels=production&state=open&filter=all" \
-            | jq '.[] | select(.pull_request != null) | .number'); do
-            RESULT=$(curl -s -X PUT \
-              -H "Authorization: token $GH_TOKEN" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/$REPO/pulls/$number/merge" \
-              -d '{"merge_method":"squash"}')
-            echo "PR #$number: $(echo "$RESULT" | jq -r '.message // .')"
-          done
+          git commit -m "feat(production): autonomous improvements"
+          git push origin main
+          echo "Changes pushed to main"
