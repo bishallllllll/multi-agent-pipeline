@@ -1,5 +1,4 @@
 """Anthropic API agent executor (Claude)."""
-import json
 import os
 from anthropic import AsyncAnthropic
 from .tools import get_tools_for_provider, execute_tool

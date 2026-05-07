@@ -1,1 +1,1 @@
-from .router import AgentExecutorRouter
+from .router import AgentExecutorRouter as AgentExecutorRouter

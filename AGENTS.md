@@ -13,7 +13,7 @@ The orchestrator is only for `--dry-run` planning — no API keys in CI, so skip
 
 Each cycle, pick the highest unchecked item. Complete it fully before moving to the next.
 
-- [ ] **1. Test suite** — Create `tests/test_agent_executor/` and `tests/test_orchestrator/` with pytest. Test tools.py, router.py, openai/anthropic/gemini executors, pipeline.py, rag_client.py, task_graph.py. Use pytest-asyncio for async tests. Mock external APIs.
+- [x] **1. Test suite** — Create `tests/test_agent_executor/` and `tests/test_orchestrator/` with pytest. Test tools.py, router.py, openai/anthropic/gemini executors, pipeline.py, rag_client.py, task_graph.py. Use pytest-asyncio for async tests. Mock external APIs.
 - [ ] **2. CI workflow** — Ensure `.github/workflows/ci.yml` runs on every PR. It should lint with ruff, run pytest, and build a Docker image. Fix any issues.
 - [ ] **3. Dockerfile** — Create a multi-stage Dockerfile at repo root. Stage 1: Python 3.11-slim, install deps. Stage 2: copy code, set entrypoint to `python -m orchestrator.cli`. Include health check.
 - [ ] **4. Health endpoint** — Add a FastAPI `/health` endpoint or a simple CLI `--health` flag that returns JSON status. Add Docker HEALTHCHECK instruction.
