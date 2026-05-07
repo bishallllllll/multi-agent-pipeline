@@ -47,6 +47,11 @@ jobs:
           pip install -r requirements.txt
           pip install pytest ruff
 
+      - name: Configure git
+        run: |
+          git config --global user.name "opencode-automation"
+          git config --global user.email "opencode@github.com"
+
       - name: Run opencode autonomous improvement
         id: opencode
         env:
@@ -60,13 +65,13 @@ jobs:
 
           opencode run "$TASK" 2>&1 | tee opencode_output.log
 
-      - name: Check for new PR
+      - name: Check for new PR from opencode
         id: check_pr
         run: |
-          PR_COUNT=$(gh pr list --author "github-actions[bot]" --state open --json number --jq 'length')
+          PR_COUNT=$(gh pr list --author "opencode-automation" --state open --json number --jq 'length')
           echo "count=$PR_COUNT" >> $GITHUB_OUTPUT
           if [ "$PR_COUNT" -gt 0 ]; then
-            PR_NUMBER=$(gh pr list --author "github-actions[bot]" --state open --json number --jq '.[0].number')
+            PR_NUMBER=$(gh pr list --author "opencode-automation" --state open --json number --jq '.[0].number')
             echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
           fi
         env:

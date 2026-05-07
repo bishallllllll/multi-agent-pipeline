@@ -10,15 +10,5 @@
         "bash": "allow"
       }
     }
-  },
-  "commands": {
-    "production-improve": {
-      "description": "Run one cycle of autonomous production improvement",
-      "prompt": "Check the production readiness checklist in AGENTS.md. Find the highest-priority unchecked item. Implement it fully following the git workflow rules. Create a PR with the changes."
-    },
-    "checklist": {
-      "description": "Show current production readiness status",
-      "prompt": "Read AGENTS.md and check which production readiness items are completed and which are still pending. Summarize the current status."
-    }
   }
 }
