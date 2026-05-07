@@ -9,3 +9,4 @@ experiments.json
 dist/
 .venv/
 venv/
+opencode_output.log

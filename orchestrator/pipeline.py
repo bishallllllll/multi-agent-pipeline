@@ -8,9 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import os
-import signal
 import sys
 import time
 from datetime import datetime, timezone
@@ -19,9 +17,9 @@ from typing import Optional
 
 import yaml
 
-from core.rag_client import RagClient
-from core.task_graph import TaskGraph
-from core.output_parser import OutputParser
+from .core.rag_client import RagClient
+from .core.task_graph import TaskGraph
+from .core.output_parser import OutputParser
 
 from agent_executor.router import AgentExecutorRouter
 
@@ -61,10 +59,10 @@ def get_model_for_agent(agent_name: str, config: dict) -> str:
     cats = config.get("model_categories", {})
     models = config.get("models", {})
     for category in cats.get("high_complexity", []):
-        if category in agent_name.lower():
+        if category.lower() in agent_name.lower():
             return models.get("high_complexity", "gpt-4o")
     for category in cats.get("fast", []):
-        if category in agent_name.lower():
+        if category.lower() in agent_name.lower():
             return models.get("fast", "gpt-4o-mini")
     return models.get("standard", "gpt-4o-mini")
 
