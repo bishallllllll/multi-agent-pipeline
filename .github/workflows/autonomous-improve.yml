@@ -69,36 +69,54 @@ jobs:
 
       - name: Create PRs from production branches
         id: create_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           git fetch origin
           COUNT=0
           for branch in $(git branch -r | grep "origin/production/" | sed 's/origin\///' | sort -u); do
-            PR_EXISTS=$(gh pr list --head "$branch" --state open --json number --jq 'length')
+            PR_EXISTS=$(curl -s -H "Authorization: token $GH_TOKEN" \
+              "https://api.github.com/repos/$REPO/pulls?head=$REPO:$branch&state=open" \
+              | jq 'length')
             if [ "$PR_EXISTS" -eq 0 ]; then
               COMMITS=$(git log origin/main..origin/$branch --oneline 2>/dev/null | wc -l)
               if [ "$COMMITS" -gt 0 ]; then
                 COMMIT_MSG=$(git log origin/main..origin/$branch --format="%s" --reverse | head -1)
-                gh pr create \
-                  --base main \
-                  --head "$branch" \
-                  --title "$COMMIT_MSG" \
-                  --body "Autonomous PR from \`$branch\`" \
-                  --label production
-                COUNT=$((COUNT + 1))
-                echo "Created PR for $branch"
+                BODY="Autonomous PR from \`$branch\`"
+                PR_JSON=$(curl -s -X POST \
+                  -H "Authorization: token $GH_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  "https://api.github.com/repos/$REPO/pulls" \
+                  -d "$(jq -n --arg title "$COMMIT_MSG" --arg head "$branch" --arg base "main" --arg body "$BODY" '{title: $title, head: $head, base: $base, body: $body}')")
+                PR_NUM=$(echo "$PR_JSON" | jq -r '.number // empty')
+                if [ -n "$PR_NUM" ] && [ "$PR_NUM" != "null" ]; then
+                  curl -s -X POST \
+                    -H "Authorization: token $GH_TOKEN" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/$REPO/issues/$PR_NUM/labels" \
+                    -d '{"labels":["production"]}'
+                  COUNT=$((COUNT + 1))
+                  echo "Created PR #$PR_NUM for $branch"
+                fi
               fi
             fi
           done
           echo "count=$COUNT" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Auto-merge production PRs
         if: steps.create_pr.outputs.count != '0'
-        run: |
-          for number in $(gh pr list --label production --state open --json number --jq '.[].number'); do
-            gh pr merge "$number" --squash --auto
-            echo "Auto-merge queued for PR #$number"
-          done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          for number in $(curl -s -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/issues?labels=production&state=open&filter=all" \
+            | jq '.[] | select(.pull_request != null) | .number'); do
+            curl -s -X PUT \
+              -H "Authorization: token $GH_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$REPO/pulls/$number/merge" \
+              -d '{"merge_method":"squash"}'
+            echo "Merged PR #$number"
+          done
